@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xtream Codes — Tester + Chequeo masivo</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13"></script>
+<script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.js"></script>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--border:#2a2f3a;--text:#e6e9ef;--muted:#8b93a5;--accent:#6c8cff;--green:#2ecc71;--red:#ff5c5c;--yellow:#f1c40f;--orange:#ff9f43}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+h1{font-size:22px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;font-family:inherit}
+textarea{resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1;min-width:180px}
+button{background:var(--accent);border:none;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600}
+button:hover{filter:brightness(1.15)}
+button.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--text);font-weight:500}
+.mini{padding:6px 10px;font-size:12px;border-radius:6px}
+.userinfo{display:none;margin-top:14px;padding:12px;background:var(--panel2);border-radius:8px;font-size:13px;line-height:1.8}
+.badge{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.badge.active{background:rgba(46,204,113,.15);color:var(--green)}
+.badge.expired{background:rgba(255,92,92,.15);color:var(--red)}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tab{padding:8px 14px;border-radius:8px;background:var(--panel2);border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--muted)}
+.tab.active{color:var(--text);border-color:var(--accent)}
+.hidden{display:none}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input,.toolbar select{width:auto}
+#search{min-width:210px;flex:1}
+.progress{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:10px 0}
+.progress>div{height:100%;width:0;background:var(--accent);transition:width .2s}
+.tablewrap{overflow:auto;max-height:55vh}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--panel)}
+td{padding:8px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:rgba(108,140,255,.05)}
+td.url{font-family:Consolas,monospace;font-size:12px;color:var(--muted);max-width:330px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+td.srv{font-family:Consolas,monospace;font-size:12px;word-break:break-all;max-width:200px}
+td.user{font-family:Consolas,monospace;font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.pass{font-family:Consolas,monospace;font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--muted)}
+td.pass:hover{color:var(--green)}
+.status{font-size:12px;font-weight:700;white-space:nowrap}
+.status.ok{color:var(--green)}.status.fail{color:var(--red)}.status.testing{color:var(--yellow)}.status.idle{color:var(--muted)}
+.st{font-size:12px;font-weight:700;white-space:nowrap}
+.st.ok{color:var(--green)}.st.expired{color:var(--red)}.st.banned{color:var(--red)}
+.st.disabled{color:var(--orange)}.st.invalid{color:var(--muted)}.st.dead{color:#ff2e2e}
+.st.checking{color:var(--yellow)}.st.pending{color:var(--muted)}
+.trial{background:rgba(108,140,255,.18);color:var(--accent);border-radius:6px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px}
+.counts{font-size:13px;color:var(--muted);margin-left:auto}
+.counts b{color:var(--text)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.open{display:flex}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;width:min(880px,94vw)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+#video{width:100%;max-height:60vh;background:#000;border-radius:8px;min-height:240px}
+code{background:var(--panel2);padding:2px 6px;border-radius:6px;word-break:break-all}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:20px 0}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📺 Xtream Codes — Tester de enlaces + Chequeo masivo de listas</h1>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" id="tabApi" onclick="switchTab('api')">API Xtream</div>
+      <div class="tab" id="tabM3u" onclick="switchTab('m3u')">Pegar lista M3U</div>
+      <div class="tab" id="tabBulk" onclick="switchTab('bulk')">📋 Chequeo masivo (100 listas)</div>
+    </div>
+
+    <div id="paneApi">
+      <div class="row">
+        <div><label>Servidor (http://host:puerto)</label><input id="server" placeholder="http://miservidor.tv:8080"></div>
+        <div><label>Usuario</label><input id="username" placeholder="usuario"></div>
+        <div><label>Contraseña</label><input id="password" type="password" placeholder="contraseña"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label>Proxy local (python proxy.py)</label><input id="proxy" placeholder="http://localhost:8080/?url={url}"></div>
+        <div><label>Formato del enlace</label><select id="ext"><option value="m3u8">m3u8 (HLS)</option><option value="ts">ts (MPEG-TS)</option></select></div>
+        <div><label>Timeout del test (s)</label><input id="timeout" type="number" value="8" min="2" max="30"></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button onclick="connect()">🔗 Conectar y cargar canales</button>
+        <button class="ghost" onclick="loadOnly()">Solo cargar lista</button>
+        <button class="ghost" onclick="testProxy()">⚙ Probar proxy</button>
+      </div>
+      <div id="userInfo" class="userinfo"></div>
+    </div>
+
+    <div id="paneM3u" class="hidden">
+      <label>Pega aquí el contenido de tu lista .m3u / .m3u8 (o una URL por línea)</label>
+      <textarea id="m3uText" rows="7" placeholder="#EXTM3U&#10;#EXTINF:-1,Canal Uno&#10;http://servidor:puerto/live/user/pass/123.m3u8"></textarea>
+      <div style="margin-top:10px"><button onclick="parseM3u()">📋 Analizar lista</button></div>
+      <div class="note">✅ El botón <b>Test</b> funciona SIN proxy. Para <b>▶ Ver</b> el video necesitas el proxy local corriendo.</div>
+    </div>
+
+    <div id="paneBulk" class="hidden">
+      <label>Pega tus listas — una por línea (formatos aceptados):</label>
+      <textarea id="bulkText" rows="9" placeholder="http://servidor.tv:8080|usuario|contraseña&#10;http://servidor.tv:8080 usuario contraseña&#10;http://servidor.tv:8080/get.php?username=usuario&amp;password=contraseña&amp;type=m3u_plus&#10;http://servidor.tv:8080/live/usuario/contraseña/123.m3u8&#10;usuario:contraseña   (usa el servidor del campo de arriba)"></textarea>
+      <div class="row" style="margin-top:10px">
+        <div><label>Conexiones simultáneas</label><input id="bulkConc" type="number" value="8" min="1" max="20"></div>
+        <div><label>Timeout por lista (s)</label><input id="bulkTimeout" type="number" value="10" min="2" max="30"></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+        <button onclick="bulkCheck()">🔍 Chequear todas</button>
+        <button class="ghost" onclick="stopBulkCheck()">⏹ Detener</button>
+        <button class="ghost" onclick="exportCSV()">⬇ Exportar CSV</button>
+        <button class="ghost" onclick="resetBulk()">🗑 Nueva lista</button>
+        <button class="ghost" onclick="testProxy()">⚙ Probar proxy</button>
+      </div>
+      <div class="note">⚠️ El <b>proxy local es OBLIGATORIO</b> para esta pestaña (hay que leer la respuesta JSON del panel y el navegador lo bloquea sin proxy).<br>
+      1) Abre una terminal en la carpeta del archivo → ejecuta <code>python proxy.py</code> → déjalo abierto.<br>
+      2) Pega <code>http://localhost:8080/?url={url}</code> en el campo Proxy (pestaña API).<br>
+      3) Pulsa <b>⚙ Probar proxy</b> para verificar. Las líneas que empiezan con <code>#</code> se ignoran.</div>
+    </div>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none">
+    <div class="toolbar">
+      <input id="search" placeholder="🔍 Buscar canal…" oninput="render()">
+      <select id="catFilter" onchange="render()"><option value="">Todas las categorías</option></select>
+      <select id="statusFilter" onchange="render()">
+        <option value="">Todos los estados</option>
+        <option value="ok">✅ Responden</option>
+        <option value="fail">❌ Muertos</option>
+        <option value="idle">⚪ Sin probar</option>
+      </select>
+      <button class="mini" onclick="testAll()">▶ Probar todos</button>
+      <button class="mini ghost" onclick="stopAll()">⏹ Detener</button>
+      <button class="mini ghost" onclick="exportM3u(true)">⬇ Exportar funcionando</button>
+      <button class="mini ghost" onclick="exportM3u(false)">⬇ Exportar todos</button>
+      <div class="counts" id="counts"></div>
+    </div>
+    <div class="progress"><div id="progressBar"></div></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th style="width:36px">#</th><th>Canal</th><th>Estado</th><th>Enlace (clic = copiar · doble clic = reproducir)</th><th style="width:215px">Acciones</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="bulkCard" style="display:none">
+    <div class="toolbar">
+      <b style="font-size:14px">📊 Resultados del chequeo</b>
+      <select id="bulkSort" onchange="renderBulk()">
+        <option value="order">Orden: tal como se pegaron</option>
+        <option value="expiring">Orden: próximas a caducar</option>
+        <option value="status">Orden: por estado</option>
+      </select>
+      <button class="mini ghost" onclick="exportCSV()">⬇ CSV</button>
+      <button class="mini ghost" onclick="resetBulk()">🗑 Nueva lista</button>
+      <div class="counts" id="bulkCounts"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="progress" style="flex:1"><div id="bulkProgress"></div></div>
+      <small id="bulkProgText" style="color:var(--muted);white-space:nowrap">0/0</small>
+    </div>
+    <div class="tablewrap" style="margin-top:10px">
+      <table>
+        <thead><tr><th style="width:36px">#</th><th>Servidor</th><th>Usuario</th><th>Contraseña</th><th>Estado</th><th>Expira</th><th>Días rest.</th><th>Conexiones</th><th style="width:110px">Acciones</th></tr></thead>
+        <tbody id="bulkTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal" id="playerModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <b id="playerTitle">Reproductor</b>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="mini ghost" onclick="copyCurrent()">📋 Copiar enlace</button>
+          <button class="mini ghost" id="audioBtn" onclick="toggleAudio()">🔊 Activar audio</button>
+          <button class="mini ghost" onclick="closePlayer()">✕ Cerrar</button>
+        </div>
+      </div>
+      <video id="video" controls autoplay muted playsinline></video>
+      <div id="playerMsg" class="note" style="display:none"></div>
+      <div class="note" id="playerUrl"></div>
+    </div>
+  </div>
+
+  <footer>Todo corre en tu navegador · nada sale de esta página excepto hacia tus propios paneles</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let channels = [], stMap = {};
+let testing = false, stopFlag = false;
+let hls = null, tsPlayer = null, currentUid = null, currentUrl = '';
+let bulkResults = [], bulkRunning = false, stopBulk = false;
+const ICO = { idle:'⚪', testing:'⏳', ok:'✅', fail:'❌' };
+const LBL = { idle:'SIN PROBAR', testing:'PROBANDO', ok:'OK', fail:'MUERTO' };
+
+/* ================= Pestañas ================= */
+const TABMAP = { api:'Api', m3u:'M3u', bulk:'Bulk' };
+function switchTab(t){
+  Object.keys(TABMAP).forEach(k => {
+    $('tab' + TABMAP[k]).classList.toggle('active', t === k);
+    $('pane' + TABMAP[k]).classList.toggle('hidden', t !== k);
+  });
+}
+
+/* ================= Config común ================= */
+function cfg(){
+  let s = $('server').value.trim().replace(/\/+$/,'');
+  if (s && !/^https?:\/\//i.test(s)) s = 'http://' + s;
+  return {
+    server: s,
+    user: $('username').value.trim(),
+    pass: $('password').value.trim(),
+    proxy: $('proxy').value.trim(),
+    ext: $('ext').value,
+    timeout: Math.max(2, parseInt($('timeout').value)||8) * 1000
+  };
+}
+function streamUrl(ch){
+  const c = cfg();
+  return `${c.server}/live/${encodeURIComponent(c.user)}/${encodeURIComponent(c.pass)}/${ch.id}.${c.ext}`;
+}
+const urlFor = ch => ch.url || streamUrl(ch);
+function proxied(url){
+  const p = cfg().proxy;
+  if (!p) return url;
+  return p.includes('{url}') ? p.replace('{url}', encodeURIComponent(url)) : p + encodeURIComponent(url);
+}
+
+/* ================= Probar proxy ================= */
+async function testProxy(){
+  const p = cfg().proxy;
+  if (!p){ alert('Escribe primero la URL del proxy, ej:\nhttp://localhost:8080/?url={url}'); return; }
+  try{
+    const res = await fetch(proxied('https://www.google.com/generate_204'), { cache:'no-store' });
+    if (res.ok || res.status === 204)
+      alert('✅ El proxy está corriendo y responde correctamente.');
+    else
+      alert('⚠️ El proxy respondió con HTTP ' + res.status);
+  }catch(e){
+    alert('❌ No se pudo contactar el proxy.\n\n¿Está corriendo? Abre una terminal y ejecuta:\n    python proxy.py\n\nDetalles: ' + e.message);
+  }
+}
+
+/* ================= API Xtream (pestaña 1) ================= */
+async function api(action){
+  const c = cfg();
+  const u = new URL(c.server + '/player_api.php');
+  u.searchParams.set('username', c.user);
+  u.searchParams.set('password', c.pass);
+  if (action) u.searchParams.set('action', action);
+  const res = await fetch(proxied(u.toString()));
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function connect(){
+  try{
+    const data = await api();
+    const ui = data.user_info || {};
+    if (ui.auth !== 1) throw new Error('Usuario o contraseña incorrectos');
+    const exp = ui.exp_date ? new Date(ui.exp_date*1000).toLocaleDateString() : 'ilimitada';
+    const cls = ui.status === 'Active' ? 'active' : 'expired';
+    $('userInfo').style.display = 'block';
+    $('userInfo').innerHTML =
+      `<b>${esc(ui.username)}</b> <span class="badge ${cls}">${esc(ui.status||'?')}</span><br>` +
+      `Expira: ${exp} &nbsp;|&nbsp; Conexiones: ${ui.active_cons ?? '?'}/${ui.max_connections ?? '?'}`;
+    await loadChannels();
+  }catch(e){
+    alert('No se pudo conectar: ' + e.message + '\n\nSugerencia: ejecuta python proxy.py, pega http://localhost:8080/?url={url} en el campo Proxy y pulsa ⚙ Probar proxy.');
+  }
+}
+async function loadOnly(){ try{ await loadChannels(); }catch(e){ alert('Error al cargar: ' + e.message); } }
+
+async function loadChannels(){
+  const c = cfg();
+  if (!c.server || !c.user || !c.pass){ alert('Rellena servidor, usuario y contraseña.'); return; }
+  const [cats, strs] = await Promise.all([api('get_live_categories'), api('get_live_streams')]);
+  const catName = {};
+  (cats||[]).forEach(x => catName[x.category_id] = x.category_name);
+  channels = (strs||[]).map((s,i) => ({
+    uid: 'c'+i, id: s.stream_id, name: s.name,
+    catName: catName[s.category_id] || 'Sin categoría'
+  }));
+  stMap = {};
+  $('catFilter').innerHTML = '<option value="">Todas las categorías</option>' +
+    [...new Set(channels.map(x=>x.catName))].sort().map(n=>`<option>${esc(n)}</option>`).join('');
+  $('resultsCard').style.display = 'block';
+  render();
+}
+
+/* ================= M3U ================= */
+function parseM3u(){
+  const lines = $('m3uText').value.split(/\r?\n/);
+  channels = []; stMap = {};
+  let pending = null, i = 0;
+  for (const raw of lines){
+    const line = raw.trim();
+    if (line.toUpperCase().startsWith('#EXTINF')){
+      pending = line.split(',').slice(1).join(',') || 'Desconocido';
+    } else if (line && !line.startsWith('#')){
+      const m = line.match(/\/live\/[^/]+\/[^/]+\/(\d+)\./);
+      channels.push({ uid:'m'+(i++), id: m?m[1]:null, name: pending||line, catName:'Lista', url: line });
+      pending = null;
+    }
+  }
+  if (!channels.length){ alert('No se encontraron enlaces en la lista.'); return; }
+  $('catFilter').innerHTML = '<option value="">Todas las categorías</option>';
+  $('resultsCard').style.display = 'block';
+  render();
+}
+
+/* ================= Tabla de canales ================= */
+function currentList(){
+  const q = $('search').value.toLowerCase();
+  const cat = $('catFilter').value;
+  const stf = $('statusFilter').value;
+  return channels.filter(c =>
+    (!q || c.name.toLowerCase().includes(q)) &&
+    (!cat || c.catName === cat) &&
+    (!stf || (stMap[c.uid]||'idle') === stf));
+}
+function render(){
+  const list = currentList();
+  $('tbody').innerHTML = list.map((c,i) => {
+    const s = stMap[c.uid] || 'idle';
+    const url = urlFor(c);
+    return `<tr>
+      <td>${i+1}</td>
+      <td><b>${esc(c.name)}</b><br><small style="color:var(--muted)">${esc(c.catName)}${c.id ? ' · ID '+c.id : ''}</small></td>
+      <td><span class="status ${s}" id="st-${c.uid}">${ICO[s]} ${LBL[s]}</span></td>
+      <td class="url" title="${esc(url)}" onclick="copyEl(this)" ondblclick="play('${c.uid}')">${esc(url)}</td>
+      <td>
+        <button class="mini" onclick="play('${c.uid}')">▶ Ver</button>
+        <button class="mini ghost" onclick="testOne('${c.uid}')">Test</button>
+        <button class="mini ghost" onclick="copyUid('${c.uid}')">Copiar</button>
+        <button class="mini ghost" onclick="openLink('${c.uid}')">Abrir</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Ningún canal coincide con el filtro.</td></tr>';
+  updateCounts();
+}
+function updateRow(uid){
+  const s = stMap[uid] || 'idle';
+  const el = $('st-'+uid);
+  if (el){ el.className = 'status '+s; el.textContent = ICO[s]+' '+LBL[s]; }
+  updateCounts();
+}
+function updateCounts(){
+  let ok=0, fail=0, idle=0;
+  channels.forEach(c => { const s = stMap[c.uid]||'idle'; if(s==='ok')ok++; else if(s==='fail')fail++; else idle++; });
+  $('counts').innerHTML = `Total <b>${channels.length}</b> · ✅ <b>${ok}</b> · ❌ <b>${fail}</b> · ⚪ <b>${idle}</b>`;
+}
+
+/* ================= Test de canales ================= */
+async function ping(url){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), cfg().timeout);
+  try{
+    await fetch(url, { mode:'no-cors', signal: ctrl.signal, cache:'no-store' });
+    return true;
+  }catch(e){ return false; }
+  finally{ clearTimeout(t); }
+}
+async function testOne(uid){
+  const ch = channels.find(c => c.uid === uid);
+  if (!ch) return;
+  stMap[uid] = 'testing'; updateRow(uid);
+  const ok = await ping(urlFor(ch));
+  stMap[uid] = ok ? 'ok' : 'fail';
+  updateRow(uid);
+}
+async function testAll(){
+  if (testing) return;
+  testing = true; stopFlag = false;
+  const list = currentList();
+  for (let i=0; i<list.length; i++){
+    if (stopFlag) break;
+    const c = list[i];
+    stMap[c.uid] = 'testing'; updateRow(c.uid);
+    $('progressBar').style.width = ((i+1)/list.length*100)+'%';
+    const ok = await ping(urlFor(c));
+    stMap[c.uid] = ok ? 'ok' : 'fail';
+    updateRow(c.uid);
+  }
+  $('progressBar').style.width = '0%';
+  testing = false;
+}
+function stopAll(){ stopFlag = true; }
+
+/* ================= CHEQUEO MASIVO ================= */
+function parseAccountLine(line){
+  line = line.trim();
+  if (!line || line.startsWith('#')) return null;
+
+  // 1) URL con username= y password=
+  if (/username=/i.test(line) && /password=/i.test(line)){
+    try{
+      const u = new URL(line);
+      const user = u.searchParams.get('username');
+      const pass = u.searchParams.get('password');
+      if (user && pass) return norm(u.origin, user, pass);
+    }catch(e){}
+  }
+  // 2) Enlace de stream /live/user/pass/123.m3u8
+  const m = line.match(/^(https?:\/\/[^/]+)\/live\/([^/]+)\/([^/]+)\/\d+\./i);
+  if (m) return norm(m[1], m[2], m[3]);
+  // 3) server|user|pass
+  let p = line.split('|').map(s=>s.trim());
+  if (p.length >= 3) return norm(p[0], p[1], p[2]);
+  // 4) server user pass
+  p = line.split(/\s+/);
+  if (p.length >= 3) return norm(p[0], p[1], p[2]);
+  // 5) user:pass o user pass (con el servidor del campo principal)
+  const srv = cfg().server;
+  if (srv){
+    if (p.length === 1){
+      const c2 = line.split(':');
+      if (c2.length === 2) return norm(srv, c2[0], c2[1]);
+    }
+    if (p.length === 2) return norm(srv, p[0], p[1]);
+  }
+  return null;
+}
+function norm(server, user, pass){
+  server = (server||'').trim().replace(/\/+$/,'');
+  if (server && !/^https?:\/\//i.test(server)) server = 'http://' + server;
+  return { server, user: (user||'').trim(), pass: (pass||'').trim() };
+}
+
+async function bulkFetch(url, timeoutMs){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try{
+    const res = await fetch(proxied(url), { signal: ctrl.signal, cache:'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally { clearTimeout(t); }
+}
+
+async function checkAccount(acc){
+  const timeoutMs = Math.max(2, parseInt($('bulkTimeout').value)||10) * 1000;
+  try{
+    const u = new URL(acc.server + '/player_api.php');
+    u.searchParams.set('username', acc.user);
+    u.searchParams.set('password', acc.pass);
+    const data = await bulkFetch(u.toString(), timeoutMs);
+    const ui = data.user_info || {};
+    if (ui.auth !== 1)
+      return { state:'invalid', label:'INVÁLIDA', exp:null, days:null, cons:null, max:null, trial:false };
+    const exp = ui.exp_date ? new Date(ui.exp_date*1000) : null;
+    const days = exp ? Math.ceil((exp - Date.now())/86400000) : null;
+    let state='ok', label=(ui.status||'ACTIVA').toUpperCase();
+    if ((ui.status||'') === 'Active'){
+      if (exp && exp < new Date()){ state='expired'; label='EXPIRADA'; }
+      else { state='ok'; label='ACTIVA'; }
+    }
+    else if (/expire/i.test(ui.status||'')){ state='expired'; label='EXPIRADA'; }
+    else if (/ban/i.test(ui.status||'')){ state='banned'; }
+    else if (/disab/i.test(ui.status||'')){ state='disabled'; }
+    return { state, label, exp, days, cons: ui.active_cons, max: ui.max_connections,
+             trial: ui.is_trial==='1' || ui.is_trial===1 };
+  }catch(e){
+    let label = 'SIN CONEXIÓN';
+    if (e.name === 'AbortError') label = 'TIMEOUT';
+    else if (/^HTTP/.test(e.message||'')) label = e.message;
+    else if (e instanceof SyntaxError) label = 'RESPUESTA INVÁLIDA';
+    return { state:'dead', label, exp:null, days:null, cons:null, max:null, trial:false, err: e.message };
+  }
+}
+
+async function bulkCheck(){
+  if (bulkRunning) return;
+  const accs = [];
+  $('bulkText').value.split(/\r?\n/).forEach(l => {
+    const a = parseAccountLine(l);
+    if (a) accs.push(a);
+  });
+  if (!accs.length){ alert('No se detectaron listas válidas. Revisa los formatos aceptados.'); return; }
+  if (!cfg().proxy &&
+      !confirm('No has configurado el proxy local. El navegador bloqueará las peticiones (CORS) y todo saldrá "SIN CONEXIÓN".\n\n¿Continuar de todas formas?'))
+    return;
+
+  bulkRunning = true; stopBulk = false;
+  bulkResults = accs.map((a,i) => ({ uid:'b'+i, ...a, state:'pending', label:'—', exp:null, days:null, cons:null, max:null, trial:false }));
+  $('bulkCard').style.display = 'block';
+  $('bulkProgress').style.width = '0%';
+  renderBulk();
+
+  const conc = Math.max(1, Math.min(20, parseInt($('bulkConc').value)||8));
+  let idx = 0, done = 0;
+  async function worker(){
+    while (idx < bulkResults.length && !stopBulk){
+      const r = bulkResults[idx++];
+      const res = await checkAccount(r);
+      Object.assign(r, res);
+      updateBRow(r.uid);
+      done++;
+      $('bulkProgress').style.width = (done/bulkResults.length*100)+'%';
+      $('bulkProgText').textContent = `${done}/${bulkResults.length}`;
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(conc, bulkResults.length)}, worker));
+  bulkRunning = false;
+  updateBulkCounts();
+
+  if (bulkResults.every(r => r.state === 'dead')){
+    if (cfg().proxy)
+      alert('Todas salieron "SIN CONEXIÓN" usando el proxy.\n\n1) ¿Está corriendo python proxy.py?\n2) Pulsa ⚙ Probar proxy para verificarlo.\n3) Si el proxy funciona, revisa servidor/usuario/contraseña.');
+    else
+      alert('Todas salieron "SIN CONEXIÓN" porque no hay proxy configurado.\n\nEjecuta python proxy.py, pega http://localhost:8080/?url={url} en el campo Proxy y vuelve a intentar.');
+  }
+}
+function stopBulkCheck(){ stopBulk = true; }
+
+/* ===== NUEVO: Borrar todo y empezar de cero ===== */
+function resetBulk(){
+  const hasData = bulkResults.length > 0 || $('bulkText').value.trim() !== '';
+  if (hasData && !confirm('¿Borrar todo?\n\nSe eliminarán la lista pegada y todos los resultados del chequeo.')) return;
+  stopBulk = true;                       // detiene el chequeo si está corriendo
+  bulkRunning = false;
+  bulkResults = [];                      // borra resultados
+  $('bulkText').value = '';              // borra el textarea
+  $('bulkCard').style.display = 'none';  // oculta la tabla de resultados
+  $('bulkProgress').style.width = '0%';
+  $('bulkProgText').textContent = '0/0';
+  $('bulkTbody').innerHTML = '';
+  $('bulkCounts').innerHTML = '';
+  $('bulkSort').value = 'order';
+}
+
+function sortedBulk(){
+  const s = $('bulkSort').value;
+  const arr = [...bulkResults];
+  if (s === 'expiring') arr.sort((a,b) => (a.days ?? Infinity) - (b.days ?? Infinity));
+  if (s === 'status'){
+    const ord = {ok:0, expired:1, banned:2, disabled:3, invalid:4, dead:5, checking:6, pending:7};
+    arr.sort((a,b) => (ord[a.state]??9) - (ord[b.state]??9));
+  }
+  return arr;
+}
+
+function renderBulk(){
+  $('bulkTbody').innerHTML = sortedBulk().map((r,i) => `<tr>
+    <td>${i+1}</td>
+    <td class="srv" title="${esc(r.server)}">${esc(r.server)}</td>
+    <td class="user" title="${esc(r.user)}">${esc(r.user)}</td>
+    <td class="pass" title="Clic para copiar la contraseña" onclick="copyText(this.textContent)">${esc(r.pass)}</td>
+    <td><span class="st ${r.state}" id="bst-${r.uid}" title="${esc(r.err||'')}">${esc(r.label)}${r.trial?' <span class="trial">PRUEBA</span>':''}</span></td>
+    <td id="bexp-${r.uid}">—</td>
+    <td id="bdays-${r.uid}">—</td>
+    <td id="bcons-${r.uid}">—</td>
+    <td><button class="mini ghost" onclick="loadIntoMain('${r.uid}')">⤴ Cargar</button></td>
+  </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px">Sin resultados todavía.</td></tr>';
+  bulkResults.forEach(r => updateBRowCells(r));
+  updateBulkCounts();
+}
+
+function updateBRowCells(r){
+  const st = $('bst-'+r.uid);
+  if (st){ st.className = 'st '+r.state; st.title = r.err || ''; st.innerHTML = esc(r.label) + (r.trial?' <span class="trial">PRUEBA</span>':''); }
+  const ex = $('bexp-'+r.uid);
+  if (ex) ex.textContent = r.exp ? r.exp.toLocaleDateString() : '—';
+  const dy = $('bdays-'+r.uid);
+  if (dy){
+    if (r.days === null || r.days === undefined){ dy.textContent = (r.state==='ok' ? '∞' : '—'); dy.style.color=''; }
+    else { dy.textContent = r.days; dy.style.color = r.days < 0 ? 'var(--red)' : 'var(--green)'; }
+  }
+  const co = $('bcons-'+r.uid);
+  if (co) co.textContent = (r.cons != null && r.max != null) ? `${r.cons}/${r.max}` : '—';
+}
+function updateBRow(uid){
+  const r = bulkResults.find(x => x.uid === uid);
+  if (r) updateBRowCells(r);
+  updateBulkCounts();
+}
+function updateBulkCounts(){
+  const c = {};
+  bulkResults.forEach(r => c[r.state] = (c[r.state]||0)+1);
+  $('bulkCounts').innerHTML =
+    `Total <b>${bulkResults.length}</b> · ` +
+    `<span style="color:var(--green)">✅ ${c.ok||0} activas</span> · ` +
+    `<span style="color:var(--red)">❌ ${c.expired||0} expiradas</span> · ` +
+    `<span style="color:var(--orange)">🚫 ${(c.banned||0)+(c.disabled||0)} baneadas</span> · ` +
+    `<span style="color:var(--muted)">⛔ ${c.invalid||0} inválidas</span> · ` +
+    `<span style="color:#ff2e2e">💀 ${c.dead||0} sin conexión</span>`;
+}
+
+function loadIntoMain(uid){
+  const r = bulkResults.find(x => x.uid === uid);
+  if (!r) return;
+  $('server').value = r.server;
+  $('username').value = r.user;
+  $('password').value = r.pass;
+  switchTab('api');
+  connect();
+}
+
+function exportCSV(){
+  if (!bulkResults.length){ alert('Primero chequea las listas.'); return; }
+  const head = ['servidor','usuario','contraseña','estado','expira','dias_restantes','conexiones_activas','conexiones_max','prueba'];
+  const rows = bulkResults.map(r => [
+    r.server, r.user, r.pass, r.label,
+    r.exp ? r.exp.toISOString().slice(0,10) : '',
+    r.days ?? '', r.cons ?? '', r.max ?? '', r.trial ? 'SI' : 'NO'
+  ]);
+  const csv = '\ufeff' + [head, ...rows]
+    .map(r => r.map(c => `"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'chequeo_listas.csv';
+  a.click();
+}
+
+/* ================= REPRODUCTOR ================= */
+function showMsg(html){
+  const m = $('playerMsg');
+  if (!html){ m.style.display='none'; return; }
+  m.style.display='block'; m.innerHTML = html;
+}
+function destroyPlayers(){
+  if (hls){ hls.destroy(); hls = null; }
+  if (tsPlayer){
+    try{ tsPlayer.pause(); tsPlayer.unload(); tsPlayer.detachMediaElement(); tsPlayer.destroy(); }catch(e){}
+    tsPlayer = null;
+  }
+  const v = $('video');
+  v.pause(); v.removeAttribute('src'); v.load();
+}
+function play(uid){
+  const ch = channels.find(c => c.uid === uid);
+  if (!ch) return;
+  currentUid = uid;
+  currentUrl = urlFor(ch);
+  destroyPlayers();
+  $('playerTitle').textContent = ch.name;
+  $('playerUrl').innerHTML = '🔗 <code>' + esc(currentUrl) + '</code>';
+  showMsg('');
+  $('playerModal').classList.add('open');
+  const video = $('video');
+  const url = $('proxy').value.trim() ? proxied(currentUrl) : currentUrl;
+
+  if (/\.m3u8(\?|$)/i.test(url)){
+    if (window.Hls && Hls.isSupported()){
+      hls = new Hls({ lowLatencyMode:true, enableWorker:true });
+      hls.on(Hls.Events.ERROR, (ev, data) => {
+        if (data.fatal) showMsg('⚠️ No se pudo reproducir. Si no tienes el proxy activo, ejecútalo (python proxy.py) o copia el enlace y pruébalo en <b>VLC</b>.');
+      });
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      video.play().catch(()=>{});
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')){
+      video.src = url; video.play().catch(()=>{});
+    } else showMsg('Tu navegador no soporta HLS. Usa VLC.');
+  } else if (/\.ts(\?|$)/i.test(url)){
+    if (window.mpegts && mpegts.getFeatureList().mseLivePlayback){
+      tsPlayer = mpegts.createPlayer(
+        { type:'mpegts', isLive:true, url },
+        { enableWorker:true, liveBufferLatencyChasing:true }
+      );
+      tsPlayer.attachMediaElement(video);
+      tsPlayer.load();
+      tsPlayer.play().catch(()=>{});
+      tsPlayer.on(mpegts.Events.ERROR, () => showMsg('⚠️ No se pudo reproducir el flujo TS. Copia el enlace y pruébalo en <b>VLC</b>.'));
+    } else showMsg('Los enlaces .ts no se pueden reproducir aquí. Usa <b>VLC</b>.');
+  } else {
+    video.src = url;
+    video.play().catch(()=>{});
+  }
+}
+function closePlayer(){
+  destroyPlayers();
+  $('playerModal').classList.remove('open');
+  showMsg('');
+}
+function toggleAudio(){
+  const v = $('video');
+  v.muted = !v.muted;
+  $('audioBtn').textContent = v.muted ? '🔊 Activar audio' : '🔇 Silenciar';
+  if (!v.muted) v.play().catch(()=>{});
+}
+function copyCurrent(){ navigator.clipboard.writeText(currentUrl); }
+
+/* ================= Utilidades ================= */
+function copyEl(el){ navigator.clipboard.writeText(el.title); }
+function copyText(t){ if (t) navigator.clipboard.writeText(t.trim()); }
+function copyUid(uid){ const c = channels.find(x=>x.uid===uid); if (c) navigator.clipboard.writeText(urlFor(c)); }
+function openLink(uid){ const c = channels.find(x=>x.uid===uid); if (c) window.open(urlFor(c), '_blank'); }
+
+function exportM3u(onlyOk){
+  const list = channels.filter(c => !onlyOk || stMap[c.uid]==='ok');
+  if (!list.length){ alert('Nada que exportar todavía.'); return; }
+  let out = '#EXTM3U\n';
+  list.forEach(c => { out += `#EXTINF:-1 group-title="${esc(c.catName)}",${esc(c.name)}\n${urlFor(c)}\n`; });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([out], {type:'audio/x-mpegurl'}));
+  a.download = onlyOk ? 'canales_funcionando.m3u' : 'todos_los_canales.m3u';
+  a.click();
+}
+
+ $('playerModal').addEventListener('click', e => { if (e.target === $('playerModal')) closePlayer(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayer(); });
+</script>
+</body>
+</html>
